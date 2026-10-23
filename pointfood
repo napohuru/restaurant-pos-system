@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>夜宵烟火 · 适老点餐</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: #f9f5f0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 1rem 0.8rem 5rem;
+    }
+
+    .poster {
+      max-width: 1300px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 1.8rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 6px 12px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem 1.2rem 2rem;
+      border: 1px solid #f0e4d8;
+      position: relative;
+    }
+
+    /* 音乐按钮 */
+    .music-btn {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 150;
+      background: #fffdfb;
+      border: 2px solid #e8d5c5;
+      border-radius: 50px;
+      padding: 0.8rem 1.4rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #7a5e48;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+      transition: 0.2s;
+      user-select: none;
+    }
+    .music-btn:hover { background: #fbeee4; border-color: #ddbca5; }
+    .music-btn.playing { background: #ffe6d5; color: #b1471c; border-color: #eecbb4; }
+
+    /* 购物车悬浮按钮 */
+    .cart-toggle {
+      position: fixed;
+      bottom: 6.5rem;
+      right: 1rem;
+      background: #b45f2b;
+      color: #fff;
+      border: none;
+      border-radius: 60px;
+      padding: 1rem 1.6rem;
+      font-size: 1.3rem;
+      font-weight: 700;
+      box-shadow: 0 8px 20px rgba(180, 95, 43, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 200;
+      transition: transform 0.2s;
+    }
+    .cart-toggle:hover { transform: scale(1.03); background: #a04e1f; }
+    .cart-count {
+      background: #ffd966;
+      color: #36281e;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    /* 购物车侧边栏 */
+    .cart-sidebar {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      max-width: 90vw;
+      height: 100vh;
+      background: #fffdfb;
+      box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
+      z-index: 300;
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid #f0e2d6;
+    }
+    .cart-sidebar.open { right: 0; }
+    
+    .cart-header {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 2px dashed #edd9ca;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .cart-header h3 { font-size: 1.6rem; color: #36281e; font-weight: 700; }
+    .cart-close { background: none; border: none; font-size: 2rem; cursor: pointer; color: #b29884; line-height: 1; }
+    
+    .cart-items { 
+      flex: 1; 
+      overflow-y: auto; 
+      padding: 1rem 1.5rem; 
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 1rem 0;
+      border-bottom: 1px solid #f5ebe3;
+      gap: 0.6rem;
+    }
+    .cart-item-info { flex: 1; }
+    .cart-item-name { font-weight: 700; color: #2e2118; font-size: 1.2rem; }
+    .cart-item-options {
+      font-size: 1rem;
+      color: #8b6f57;
+      margin-top: 0.2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+    .cart-item-options span {
+      background: #f9f2ea;
+      padding: 0.2rem 0.7rem;
+      border-radius: 20px;
+      font-size: 0.95rem;
+      color: #6c4f34;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .cart-item-price { font-weight: 700; color: #b45f2b; white-space: nowrap; font-size: 1.2rem; }
+    .cart-item-actions { display: flex; flex-direction: column; gap: 0.3rem; align-items: center; }
+    .cart-item-remove { background: none; border: none; color: #cc9f7b; cursor: pointer; font-size: 1.6rem; padding: 0 0.2rem; line-height: 1; }
+    
+    /* 购物车底部 */
+    .cart-footer { 
+      padding: 1rem 1.5rem; 
+      border-top: 2px dashed #edd9ca;
+      flex-shrink: 0;
+      background: #fffdfb;
+      padding-bottom: max(1.2rem, env(safe-area-inset-bottom));
+    }
+    
+    .cart-total { 
+      display: flex; 
+      justify-content: space-between; 
+      font-size: 1.4rem; 
+      font-weight: 700; 
+      margin-bottom: 0.8rem; 
+      color: #36281e; 
+    }
+    .cart-total .total-price { color: #b45f2b; }
+    
+    .cart-actions { 
+      display: flex; 
+      gap: 0.8rem; 
+      align-items: stretch;
+    }
+    
+    .cart-actions button { 
+      padding: 0.8rem 0.5rem; 
+      border: none; 
+      border-radius: 40px; 
+      font-weight: 700; 
+      font-size: 1.1rem; 
+      cursor: pointer; 
+      transition: 0.2s; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+    
+    .btn-clear { 
+      background: #f0e4d8; 
+      color: #5e4b3c; 
+      flex: 0 0 30%;
+    }
+    .btn-clear:hover { background: #e4d3c4; }
+    
+    .btn-order { 
+      background: #b45f2b; 
+      color: #fff; 
+      flex: 1; 
+    }
+    .btn-order:hover { background: #a04e1f; }
+    
+    .empty-cart { text-align: center; color: #b29884; padding: 2rem 0; font-size: 1.2rem; }
+
+    /* 图片放大遮罩 */
+    .overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 500; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .overlay.show { opacity: 1; pointer-events: auto; }
+    .overlay img { max-width: 90vw; max-height: 85vh; border-radius: 1.2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.5); background: #fff; object-fit: contain; }
+    .overlay-close { position: absolute; top: 1.5rem; right: 2rem; font-size: 3rem; color: #fff; cursor: pointer; background: none; border: none; line-height: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+
+    /* 海报标题 */
+    .header { text-align: center; margin-bottom: 2rem; position: relative; }
+    .header h1 {
+      font-size: 2.6rem; font-weight: 700; letter-spacing: 3px; color: #36281e;
+      display: inline-block; padding-bottom: 0.5rem;
+      border-bottom: 5px double #cc9f7b; text-shadow: 2px 2px 0 rgba(255, 235, 215, 0.7);
+    }
+    .header .sub {
+      font-size: 1.3rem; font-weight: 400; color: #8b6f57; margin-top: 0.75rem;
+      letter-spacing: 2px; background: #faf2e9; display: inline-block;
+      padding: 0.35rem 1.8rem; border-radius: 40px;
+    }
+
+    /* 网格 */
+    .menu-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-top: 1rem; }
+
+    .card {
+      background: #fffdfb; border-radius: 1.5rem; overflow: hidden;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05); border: 1px solid #f0e2d6;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex; flex-direction: column;
+      position: relative;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 18px 28px rgba(107, 67, 37, 0.12); border-color: #ddc3ae; }
+
+    .card-image { width: 100%; aspect-ratio: 1 / 1; background: #f3ebe4; overflow: hidden; position: relative; cursor: zoom-in; }
+    .card-image img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.35s ease; }
+    .card:hover .card-image img { transform: scale(1.03); }
+
+    .card-content { padding: 1rem 1rem 1.2rem; display: flex; flex-direction: column; flex: 1; }
+    .name-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.3rem; }
+    .dish-name { font-size: 1.4rem; font-weight: 700; color: #2e2118; letter-spacing: 0.5px; }
+    .base-price {
+      font-size: 1.5rem; font-weight: 800; color: #b45f2b; background: #fbeee4;
+      padding: 0.2rem 0.8rem; border-radius: 30px; line-height: 1.2;
+      cursor: pointer; transition: 0.15s; user-select: none; border: 1px solid transparent;
+      position: relative;
+    }
+    .base-price:hover { background: #f5e0d0; border-color: #ddbca5; }
+
+    .options span {
+      display: inline-block; background: #f9f2ea; padding: 0.4rem 0.9rem;
+      border-radius: 30px; margin-right: 0.4rem; margin-bottom: 0.4rem;
+      white-space: nowrap; font-weight: 500; color: #6c4f34;
+      border: 1px solid #f0dfd0; font-size: 0.95rem;
+      cursor: pointer; transition: 0.15s; user-select: none;
+    }
+    .options span:hover { background: #f0e0d2; border-color: #ddbca5; color: #4d3827; }
+    .options .highlight-tag { background: #ffe6d5 !important; color: #b1471c !important; border-color: #eecbb4 !important; font-weight: 600 !important; }
+    .options .plain-text {
+      display: inline; background: none; padding: 0; margin-right: 0.2rem;
+      border: none; white-space: normal; font-size: 1rem; color: #70543e;
+      font-weight: 400; cursor: default;
+    }
+    .options .plain-text:hover { background: none; color: #70543e; }
+    .card-note { font-size: 0.9rem; color: #a07e64; margin-top: 0.3rem; font-style: italic; }
+
+    /* 加购飞入动画特效 */
+    .fly-plus {
+      position: absolute;
+      color: #4caf50;
+      font-size: 1.5rem;
+      font-weight: 900;
+      pointer-events: none;
+      animation: flyUp 0.6s ease-out forwards;
+      z-index: 10;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    @keyframes flyUp {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-40px) scale(1.5); opacity: 0; }
+    }
+
+    /* ================= 极简小票弹窗 (修复显示不全) ================= */
+    .receipt-modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6); display: none;
+      align-items: center; justify-content: center; z-index: 600; padding: 1rem;
+    }
+    .receipt-modal.show { display: flex; }
+    
+    .receipt-box {
+      background: #fff; 
+      width: 100%; 
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 1.2rem 1.2rem; 
+      border-radius: 0.8rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      font-family: 'Courier New', Courier, monospace; 
+      color: #111;
+      font-size: 1.2rem;
+      line-height: 1.6; 
+      /* 去除了 max-height，让弹窗随内容自然伸展，解决显示不全 */
+      position: relative;
+    }
+
+    .receipt-time { 
+      text-align: center; 
+      font-size: 1.1rem; 
+      color: #333; 
+      margin-bottom: 0.8rem; 
+      padding-bottom: 0.5rem; 
+      border-bottom: 1px dashed #ccc; 
+      flex-shrink: 0;
+    }
+    
+    .receipt-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .receipt-item { 
+      display: flex; 
+      justify-content: space-between; 
+      font-size: 1.15rem; 
+      margin-bottom: 0.6rem; 
+      align-items: flex-start; 
+      gap: 0.5rem; 
+    }
+    .receipt-item .item-left { flex: 1; }
+    .receipt-item .item-left .opt-line { font-size: 1rem; color: #555; margin-left: 0.5rem; }
+    .receipt-item .item-price { font-weight: 700; white-space: nowrap; }
+    
+    .receipt-total { 
+      display: flex; 
+      justify-content: space-between; 
+      font-weight: 700; 
+      font-size: 1.5rem; 
+      margin-top: 0.8rem; 
+      padding-top: 0.8rem; 
+      border-top: 1px dashed #333; 
+      flex-shrink: 0;
+    }
+    
+    .receipt-footer { 
+      text-align: center; 
+      font-size: 1.05rem; 
+      color: #333; 
+      font-weight: bold; 
+      margin-top: 1rem; 
+      border-top: 1px dashed #ccc; 
+      padding-top: 0.8rem; 
+      flex-shrink: 0;
+    }
+    
+    .receipt-close { 
+      position: absolute; top: 0.5rem; right: 0.8rem; 
+      background: none; border: none; font-size: 2rem; 
+      color: #999; cursor: pointer; line-height: 1; z-index: 10;
+    }
+    
+    .receipt-hint { text-align: center; font-size: 0.9rem; color: #999; margin-top: 0.5rem; font-style: italic; flex-shrink: 0; }
+
+    /* 紧凑模式 (当菜品很多时) */
+    .receipt-box.compact { font-size: 1.05rem; padding: 1.2rem 1rem; }
+    .receipt-box.compact .receipt-item { margin-bottom: 0.3rem; font-size: 1rem; }
+    .receipt-box.compact .receipt-item .item-left .opt-line { font-size: 0.9rem; }
+    .receipt-box.compact .receipt-time { margin-bottom: 0.5rem; padding-bottom: 0.3rem; }
+    .receipt-box.compact .receipt-total { font-size: 1.3rem; margin-top: 0.5rem; padding-top: 0.5rem; }
+    .receipt-box.compact .receipt-footer { margin-top: 0.6rem; padding-top: 0.6rem; font-size: 0.95rem; }
+    .receipt-box.compact .receipt-hint { display: none; /* 极多菜品时隐藏小票提示，节省空间 */ }
+
+    /* 中央提示 Toast */
+    .center-toast {
+      position: fixed;
+      bottom: 11rem;
+      right: 1rem;
+      background: #36281e;
+      color: #fff;
+      padding: 0.8rem 1.6rem;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      z-index: 700;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .center-toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* 响应式 */
+    @media (max-width: 1100px) {
+      .menu-grid { grid-template-columns: repeat(3, 1fr); }
+      .header h1 { font-size: 2.2rem; }
+    }
+    @media (max-width: 820px) {
+      .menu-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+      .poster { padding: 1rem 0.8rem 1.5rem; border-radius: 1.2rem; }
+      .header h1 { font-size: 1.9rem; letter-spacing: 1px; }
+      .header .sub { font-size: 1.1rem; padding: 0.3rem 1rem; }
+      .cart-sidebar { width: 340px; }
+      .music-btn { top: 0.6rem; right: 0.6rem; padding: 0.6rem 1rem; font-size: 1rem; }
+      .cart-toggle { bottom: 6.5rem; right: 0.8rem; padding: 0.9rem 1.3rem; font-size: 1.1rem; }
+      .base-price { font-size: 1.3rem; }
+      .dish-name { font-size: 1.25rem; }
+      .options span { font-size: 0.9rem; padding: 0.35rem 0.75rem; }
+      
+      .center-toast { bottom: 10rem; right: 0.8rem; font-size: 1rem; padding: 0.7rem 1.2rem; }
+    }
+    @media (max-width: 520px) {
+      .menu-grid { grid-template-columns: 1fr; }
+      .header h1 { font-size: 1.8rem; }
+      .base-price { font-size: 1.3rem; }
+      .dish-name { font-size: 1.3rem; }
+      body { padding: 0.5rem 0.5rem 6rem; }
+      .poster { padding: 1rem 0.8rem 1.5rem; border-radius: 1.2rem; }
+      .cart-toggle { bottom: 7rem; right: 0.6rem; padding: 0.9rem 1.2rem; font-size: 1.1rem; }
+      .cart-count { width: 28px; height: 28px; font-size: 0.9rem; }
+      .music-btn { padding: 0.5rem 0.9rem; font-size: 0.95rem; }
+      .cart-sidebar { width: 90vw; max-width: 360px; }
+      .cart-header h3 { font-size: 1.4rem; }
+      .cart-item-name { font-size: 1.1rem; }
+      .cart-item-price { font-size: 1.1rem; }
+      .cart-total { font-size: 1.3rem; }
+      .cart-actions button { font-size: 1rem; padding: 0.8rem 0.3rem; }
+      
+      .receipt-box { max-width: 330px; }
+      .center-toast { bottom: 10.5rem; right: 0.6rem; font-size: 0.95rem; padding: 0.7rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <audio id="bgMusic" loop autoplay></audio>
+  <button class="music-btn" id="musicBtn" onclick="toggleMusic()">🎵 音乐</button>
+
+  <div class="poster">
+    <div class="header">
+      <h1>🌙 夜宵烟火</h1>
+      <div class="sub">深夜食堂 · 现点现做</div>
+    </div>
+
+    <div class="menu-grid">
+      <!-- 1. 蒸烧卖 13 -->
+      <div class="card">
+        <div class="card-image" onclick="openOverlay(this.querySelector('img').src)">
+          <img src="https://assets.699pic.com/public/img95/photo/60091/9514.jpg_wh860.jpg" alt="蒸烧卖" loading="lazy">
+        </div>
+        <div class="card-content">
+          <div class="name-row">
+            <span class="dish-name">蒸烧卖</span>
+            <span class="base-price" data-name="蒸烧卖" data-price="13" onclick="addToCart(this, event)">¥13</span>
+          </div>
+          <div class="options"><span class="plain-text">经典猪肉香菇馅</span></div>
+        </div>
+      </div>
+
+      <!-- 2. 煮水饺 10 -->
+      <div class="card">
+        <div class="card-image" onclick="openOverlay(this.querySelector('img').src)">
+          <img src="https://pic.nximg.cn/file/20230428/3248589_104426783106_2.jpg" alt="煮水饺" loading="lazy">
+        </div>
+        <div class="card-content">
+          <div class="name-row">
+            <span class="dish-name">煮水饺</span>
+            <span class="base-price" id="price-2" data-name="煮水饺" data-price="10" onclick="addToCart(this, event)">¥10</span>
+          </div>
+          <div class="options">
+            <span class="highlight-tag" data-target="price-2" data-adjust="10" onclick="adjustPrice(this)">20个 ¥20</span>
+            <span>标准份</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 干水饺 10 -->
+      <div class="card">
+        <div class="card-image" onclick="openOverlay(this.querySelector('img').src)">
+          <img src="https://ns-strategy.cdn.bcebos.com/ns-strategy/upload/fc_big_pic/part-00530-553.jpg" alt="干水饺" loading="lazy">
+        </div>
+        <div class="card-content">
+          <div class="name-row">
+            <span class="dish-name">干水饺</span>
+            <span class="base-price" id="price-3" data-name="干水饺" data-price="10" onclick="addToCart(this, event)">¥10</span>
+          </div>
+          <div class="options">
+            <span data-target="price-3" data-adjust="1" onclick="adjustPrice(this)">花生酱 +1元/勺</span>
+            <span data-target="price-3" data-adjust="1" onclick="adjustPrice(this)">番茄酱 +1元/勺</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 卤鸭头 8 -->
+      <div class="card">
+        <div class="card-image" onclick="openOverlay(this.querySelector('img').src)">
+          <img src="http://seopic.699pic.com/photo/50008/0581.jpg_wh1200.jpg" alt="卤鸭头" loading="lazy">
+        </div>
+        <div class="card-content">
+          <div class="name-row">
+            <span class="dish-name">卤鸭头</span>
+            <span class="base-price" id="price-4" data-name="卤鸭头" data-price="8" onclick="addToCart(this, event)">¥8</span>
+          </div>
+          <div class="options">
+            <span class="highlight-tag" data-target="price-4" data-adjust="7" onclick="adjustPrice(this)">两个 ¥15</span>
+            <span>单只</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 炸猪排 18 (修复0元购Bug的焦点菜品) -->
+      <div class="card">
+        <div class="card-image" onclick="openOverlay(this.querySelector('img').src)">
+          <img src="https://pic.nximg.cn/file/20230316/202488_142200335108_2.jpg" alt="炸猪排" loading="lazy">
+        </div>
+        <div class="card-content">
+          <div class="name-row">
+            <span class="dish-name">炸猪排</span>
+            <span class="base-price" id="price-5" data-name="炸猪排" data-price="18" onclick="addToCart(this, event)">¥18</span>
+          </div>
+          <div class="options">
+            <span data-target="price-5" data-adjust="-8" onclick="adjustPrice(this)">半份 ¥10</span>
+            <span data-target="price-5" data-adjust="1" onclick="adjustPrice(this)">番茄酱 +1元/勺</span>
+            <span data-target="price-5" data-adjust="1" onclick="adjustPrice(this)">甜辣酱 +1元/勺</span>
+            <span data-target="price-5" data-adjust="1" onclick="adjustPrice(this)">辣味酱 +1元/勺</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. 炸鸡排 12 -->
+      <div class="card">
+        <div class="card-image" onclick="openOverlay(this.querySelector('img').src)">
+          <img src="https://pic.nximg.cn/file/20251028/27613958_123225735108_2.jpg" alt="炸鸡排" loading="lazy">
+        </div>
+        <div class="card-content">
+          <div class="name-row">
+            <span class="dish-name">炸鸡排</span>
+            <span class="base-price" id="price-6" data-name="炸鸡排" data-price="12" onclick="addToCart(this, event)">¥12</span>
+          </div>
+          <div class="options">
+            <span data-target="price-6" data-adjust="0" onclick="adjustPrice(this)">整只不切</span>
+            <span data-target="price-6" data-adjust="0" onclick="adjustPrice(this)">切段</span>
+            <span data-target="price-6" data-adjust="0" onclick="adjustPrice(this)">孜然味包</span>
+            <span data-target="price-6" data-adjust="0" onclick="adjustPrice(this)">香辣味包</span>
+            <span data-target="price-6" data-adjust="0" onclick="adjustPrice(this)">番茄酱包</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. 烫粉皮 10 -->
+      <div class="card">
+        <div class="card-image" onclick="openOverlay(this.querySelector('img').src)">
+          <img src="https://x0.ifengimg.com/ucms/2023_15/168CDB3221374E4834A9D911433F6D2AC3D55E29_size110_w1080_h720.jpg" alt="烫粉皮" loading="lazy">
+        </div>
+        <div class="card-content">
+          <div class="name-row">
+            <span class="dish-name">烫粉皮</span>
+            <span class="base-price" id="price-7" data-name="烫粉皮" data-price="10" onclick="addToCart(this, event)">¥10</span>
+          </div>
+          <div class="options">
+            <span data-target="price-7" data-adjust="3" onclick="adjustPrice(this)">加肉 +3元</span>
+            <span data-target="price-7" data-adjust="2" onclick="adjustPrice(this)">加煎蛋 +2元</span>
+            <span data-target="price-7" data-adjust="3" onclick="adjustPrice(this)">加油条 +3元</span>
+            <span data-target="price-7" data-adjust="0" onclick="adjustPrice(this)">不要葱</span>
+            <span data-target="price-7" data-adjust="0" onclick="adjustPrice(this)">粉皮多一点</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. 加肉加蛋烫粉皮 15 -->
+      <div class="card">
+        <div class="card-image" onclick="openOverlay(this.querySelector('img').src)">
+          <img src="https://bbs.gotvg.com/data/attachment/forum/202610/21/155631ah8xcxvfzz8quvvu.jpg" alt="加肉加蛋烫粉皮" loading="lazy">
+        </div>
+        <div class="card-content">
+          <div class="name-row">
+            <span class="dish-name">加肉加蛋烫粉皮</span>
+            <span class="base-price" data-name="加肉加蛋烫粉皮量多" data-price="15" data-options="量多,加肉加蛋" onclick="addToCart(this, event)">¥15</span>
+          </div>
+          <div class="options">
+            <span class="highlight-tag">量多 · 加肉加蛋</span>
+            <span>一碗满足</span>
+          </div>
+          <div class="card-note">粉皮份量加多，搭配肉与煎蛋</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 1.8rem; text-align: center; font-size: 1rem; color: #b29884; border-top: 2px dashed #edd9ca; padding-top: 1rem; letter-spacing: 1px;">
+      ⏰ 营业时间 18:00 - 02:00 &nbsp;|&nbsp; 点击价格或可选品加价后加入购物车 &nbsp;|&nbsp; 图片仅供参考
+    </div>
+  </div>
+
+  <button class="cart-toggle" onclick="toggleCart()">
+    🛒 购物车 <span class="cart-count" id="cartCount">0</span>
+  </button>
+
+  <div class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+      <h3>🛒 我的夜宵</h3>
+      <button class="cart-close" onclick="toggleCart()">✕</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+      <div class="empty-cart">暂无商品，点击价格或可选品加入</div>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>合计</span>
+        <span class="total-price" id="cartTotal">¥0</span>
+      </div>
+      <div class="cart-actions">
+        <button class="btn-clear" onclick="clearCart()">清空</button>
+        <button class="btn-order" onclick="placeOrder()">呼叫服务员下单</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay" onclick="closeOverlay(event)">
+    <button class="overlay-close" onclick="closeOverlay(event)">✕</button>
+    <img id="overlayImg" src="" alt="放大预览">
+  </div>
+
+  <!-- 极简小票弹窗 -->
+  <div class="receipt-modal" id="receiptModal">
+    <div class="receipt-box" id="receiptBox">
+      <button class="receipt-close" onclick="closeReceipt()">✕</button>
+      <div class="receipt-time" id="receiptTime"></div>
+      <div class="receipt-body" id="receiptItems"></div>
+      <div class="receipt-total">
+        <span>合计</span>
+        <span id="receiptTotal">¥0</span>
+      </div>
+      <div class="receipt-footer">
+        请呼叫服务员为您确认订单<br>和及时送菜
+      </div>
+      <div class="receipt-hint">— 小票预览 —</div>
+    </div>
+  </div>
+
+  <div class="center-toast" id="centerToast"></div>
+
+  <script>
+    // ==================== 购物车数据 ====================
+    let cart = [];
+    let nextId = 1;
+
+    function genId() { return nextId++; }
+
+    function addToCart(el, event) {
+      const name = el.dataset.name;
+      let price = parseFloat(el.textContent.replace('¥', ''));
+      if (isNaN(price)) price = parseFloat(el.dataset.price);
+
+      const presetOptionsStr = el.dataset.options || '';
+      const presetOptions = presetOptionsStr ? presetOptionsStr.split(',').map(o => ({ name: o.trim(), priceAdjust: 0 })) : [];
+      const pending = el._pendingOptions || [];
+      
+      // 合并选项并处理合并同类项
+      let mergedOptions = [...presetOptions, ...pending];
+      // 根据名字合并数量
+      let optionMap = new Map();
+      mergedOptions.forEach(opt => {
+        if(optionMap.has(opt.name)) {
+          optionMap.get(opt.name).count += 1;
+        } else {
+          optionMap.set(opt.name, { name: opt.name, priceAdjust: opt.priceAdjust, count: 1 });
+        }
+      });
+      
+      let finalOptions = [];
+      optionMap.forEach((val, key) => {
+        // 如果是多次点击加料，显示 x2, x3
+        let displayName = val.count > 1 ? `${key} x${val.count}` : key;
+        finalOptions.push({ name: displayName, priceAdjust: val.priceAdjust * val.count });
+      });
+
+      cart.push({
+        id: genId(),
+        name: name,
+        basePrice: parseFloat(el.dataset.price),
+        options: finalOptions,
+        finalPrice: price
+      });
+
+      el._pendingOptions = [];
+      el.textContent = `¥${parseFloat(el.dataset.price).toFixed(0)}`;
+
+      if (event) {
+        showFlyAnimation(event.clientX, event.clientY);
+      }
+
+      updateCartUI();
+      showCenterToast(`已加入：${name} ¥${price.toFixed(0)}`);
+    }
+
+    function showFlyAnimation(x, y) {
+      const effect = document.createElement('div');
+      effect.className = 'fly-plus';
+      effect.textContent = '+1';
+      effect.style.left = (x - 15) + 'px';
+      effect.style.top = (y - 20) + 'px';
+      document.body.appendChild(effect);
+      setTimeout(() => { effect.remove(); }, 600);
+    }
+
+    // 修复 0元购 Bug：增加底价判断
+    function adjustPrice(optionEl) {
+      const targetId = optionEl.dataset.target;
+      const priceEl = document.getElementById(targetId);
+      if (!priceEl) return;
+
+      const basePrice = parseFloat(priceEl.dataset.price);
+      const adjust = parseFloat(optionEl.dataset.adjust) || 0;
+      let currentDisplay = parseFloat(priceEl.textContent.replace('¥', ''));
+      
+      // 计算新价格
+      let newPrice = currentDisplay + adjust;
+      
+      // 核心修复：如果是减价操作（adjust < 0），且新价格将低于基础价，则强制保持基础价
+      if (adjust < 0 && newPrice < basePrice) {
+        newPrice = basePrice;
+        showCenterToast(`已是半份底价，不可再减`);
+      } else {
+        newPrice = Math.max(0, newPrice);
+        if (!priceEl._pendingOptions) priceEl._pendingOptions = [];
+        const optText = optionEl.textContent.trim();
+        priceEl._pendingOptions.push({ name: optText, priceAdjust: adjust });
+        showCenterToast(`已选：${optText}`);
+      }
+      
+      priceEl.textContent = `¥${newPrice.toFixed(0)}`;
+    }
+
+    function updateCartUI() {
+      const cartItemsEl = document.getElementById('cartItems');
+      const cartCountEl = document.getElementById('cartCount');
+      const cartTotalEl = document.getElementById('cartTotal');
+
+      cartCountEl.textContent = cart.length;
+
+      if (cart.length === 0) {
+        cartItemsEl.innerHTML = '<div class="empty-cart">暂无商品，点击价格或可选品加入</div>';
+        cartTotalEl.textContent = '¥0';
+        return;
+      }
+
+      let total = 0;
+      let html = '';
+      cart.forEach((item) => {
+        total += item.finalPrice;
+        const optionsHtml = item.options.map((o, oi) =>
+          `<span>${o.name} <button onclick="removeOption(${item.id},${oi})" style="background:none;border:none;color:#b1471c;cursor:pointer;font-size:0.7rem;padding:0 0 0 0.2rem;">✕</button></span>`
+        ).join(' ');
+        html += `
+          <div class="cart-item">
+            <div class="cart-item-info">
+              <div class="cart-item-name">${item.name}</div>
+              <div class="cart-item-options">${optionsHtml || '标准'}</div>
+            </div>
+            <div class="cart-item-price">¥${item.finalPrice.toFixed(0)}</div>
+            <div class="cart-item-actions">
+              <button class="cart-item-remove" onclick="removeCartItem(${item.id})" title="删除菜品">🗑</button>
+            </div>
+          </div>
+        `;
+      });
+      cartItemsEl.innerHTML = html;
+      cartTotalEl.textContent = `¥${total.toFixed(0)}`;
+    }
+
+    function removeOption(cartItemId, optionIndex) {
+      const item = cart.find(i => i.id === cartItemId);
+      if (!item) return;
+      if (!item.options[optionIndex]) return;
+
+      const opt = item.options[optionIndex];
+      item.finalPrice = Math.max(item.basePrice, item.finalPrice - opt.priceAdjust); // 移除选项时不能低于底价
+
+      item.options.splice(optionIndex, 1);
+      updateCartUI();
+      showCenterToast('已移除该选项');
+    }
+
+    function removeCartItem(id) {
+      cart = cart.filter(item => item.id !== id);
+      updateCartUI();
+    }
+
+    function clearCart() {
+      if (cart.length === 0) return;
+      if (confirm('确定清空购物车吗？')) {
+        cart = [];
+        updateCartUI();
+        document.querySelectorAll('.base-price').forEach(el => {
+          if (el.dataset.price) {
+            el.textContent = `¥${parseFloat(el.dataset.price).toFixed(0)}`;
+          }
+          el._pendingOptions = [];
+        });
+      }
+    }
+
+    function placeOrder() {
+      if (cart.length === 0) {
+        showCenterToast('购物车是空的，先点些夜宵吧～');
+        return;
+      }
+
+      showCenterToast('📢 请呼叫服务员确认订单');
+      
+      setTimeout(() => {
+        const receiptItemsEl = document.getElementById('receiptItems');
+        const receiptTotalEl = document.getElementById('receiptTotal');
+        const receiptTimeEl = document.getElementById('receiptTime');
+        const receiptBox = document.getElementById('receiptBox');
+        
+        const now = new Date();
+        const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        receiptTimeEl.textContent = `点餐时间: ${timeStr}`;
+
+        let total = 0;
+        let itemsHtml = '';
+        let itemsCount = 0;
+        
+        cart.forEach(item => {
+          total += item.finalPrice;
+          itemsCount += 1 + item.options.length;
+          
+          const optLines = item.options.map(o =>
+            `<div class="opt-line">· ${o.name}</div>`
+          ).join('');
+          itemsHtml += `
+            <div class="receipt-item">
+              <div class="item-left">
+                ${item.name}
+                ${optLines}
+              </div>
+              <div class="item-price">¥${item.finalPrice.toFixed(0)}</div>
+            </div>
+          `;
+        });
+
+        // 智能判断：如果数量较多，进入紧凑排版模式，并隐藏“小票预览”字样以留出空间
+        if (itemsCount > 7) {
+          receiptBox.classList.add('compact');
+        } else {
+          receiptBox.classList.remove('compact');
+        }
+
+        receiptItemsEl.innerHTML = itemsHtml;
+        receiptTotalEl.textContent = `¥${total.toFixed(0)}`;
+
+        document.getElementById('receiptModal').classList.add('show');
+
+        cart = [];
+        updateCartUI();
+        document.querySelectorAll('.base-price').forEach(el => {
+          if (el.dataset.price) {
+            el.textContent = `¥${parseFloat(el.dataset.price).toFixed(0)}`;
+          }
+          el._pendingOptions = [];
+        });
+      }, 800);
+    }
+
+    function closeReceipt() {
+      document.getElementById('receiptModal').classList.remove('show');
+    }
+
+    function toggleCart() {
+      document.getElementById('cartSidebar').classList.toggle('open');
+    }
+
+    function openOverlay(src) {
+      const overlay = document.getElementById('overlay');
+      const img = document.getElementById('overlayImg');
+      if (src) {
+        img.src = src;
+        overlay.classList.add('show');
+      }
+    }
+
+    function closeOverlay(e) {
+      if (e.target === document.getElementById('overlay') || e.target.classList.contains('overlay-close')) {
+        document.getElementById('overlay').classList.remove('show');
+      }
+    }
+
+    document.getElementById('overlayImg').addEventListener('click', (e) => e.stopPropagation());
+
+    let toastTimer = null;
+    function showCenterToast(msg) {
+      const toast = document.getElementById('centerToast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // ==================== 背景音乐 ====================
+    const bgMusic = document.getElementById('bgMusic');
+    const musicBtn = document.getElementById('musicBtn');
+    let isPlaying = false;
+
+    const bgmList = [
+      "https://cdn.pixabay.com/audio/2026/06/04/audio_11edd2e089.mp3",
+      "https://cdn.pixabay.com/audio/2022/10/25/audio_5f8f7a4c6b.mp3",
+      "https://cdn.pixabay.com/audio/2022/03/15/audio_c8c8a73467.mp3"
+    ];
+
+    function initMusic() {
+      const randomIndex = Math.floor(Math.random() * bgmList.length);
+      const source = document.createElement('source');
+      source.src = bgmList[randomIndex];
+      source.type = "audio/mpeg";
+      bgMusic.appendChild(source);
+    }
+
+    function toggleMusic() {
+      if (isPlaying) {
+        bgMusic.pause();
+        musicBtn.classList.remove('playing');
+        musicBtn.innerHTML = '🎵 音乐';
+        isPlaying = false;
+      } else {
+        bgMusic.play().then(() => {
+          musicBtn.classList.add('playing');
+          musicBtn.innerHTML = '⏸️ 音乐';
+          isPlaying = true;
+        }).catch(() => {
+          showCenterToast('音乐播放失败');
+        });
+      }
+    }
+
+    document.addEventListener('click', function unlockAudio() {
+      if (!isPlaying) {
+        bgMusic.play().then(() => {
+          musicBtn.classList.add('playing');
+          musicBtn.innerHTML = '⏸️ 音乐';
+          isPlaying = true;
+        }).catch(() => {});
+      }
+      document.removeEventListener('click', unlockAudio);
+    }, { once: true });
+
+    window.addEventListener('load', () => {
+      initMusic();
+      bgMusic.volume = 0.3;
+      bgMusic.play().then(() => {
+        musicBtn.classList.add('playing');
+        musicBtn.innerHTML = '⏸️ 音乐';
+        isPlaying = true;
+      }).catch(() => {});
+    });
+
+    updateCartUI();
+  </script>
+</body>
+</html>
